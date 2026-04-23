@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIGIL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #fff;
+      color: #111;
+      cursor: none;
+      overflow-x: hidden;
+      transition: background 1.2s ease;
+    }
+
+    /* ── CUSTOM CURSOR ── */
+    .cursor {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      background: #111;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: width 0.35s cubic-bezier(0.25,0.46,0.45,0.94),
+                  height 0.35s cubic-bezier(0.25,0.46,0.45,0.94),
+                  background 0.35s,
+                  opacity 0.3s;
+    }
+
+    .cursor.expand {
+      width: 56px;
+      height: 56px;
+      background: rgba(17,17,17,0.07);
+    }
+
+    .cursor-label {
+      position: fixed;
+      pointer-events: none;
+      z-index: 10000;
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: opacity 0.25s;
+      color: #111;
+    }
+
+    .cursor.expand ~ .cursor-label { opacity: 1; }
+
+    /* ── HEADER ── */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      height: 60px;
+    }
+
+    .logo {
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #111;
+      cursor: none;
+    }
+
+    .logo .l {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(-10px);
+      animation: dropIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    }
+
+    @keyframes dropIn {
+      to { opacity: 1; transform: none; }
+    }
+
+    .cart {
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #999;
+      text-decoration: none;
+      cursor: none;
+      opacity: 0;
+      animation: fadeUp 0.5s ease 0.7s forwards;
+      transition: color 0.2s;
+    }
+
+    .cart:hover { color: #111; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* ── DOT NAV ── */
+    .dot-nav {
+      position: fixed;
+      right: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .dot-nav button {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      border: none;
+      background: #ccc;
+      padding: 0;
+      cursor: none;
+      transition: background 0.4s, transform 0.4s;
+    }
+
+    .dot-nav button.active {
+      background: #111;
+      transform: scale(1.8);
+    }
+
+    /* ── SECTIONS ── */
+    .section {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── CARD ── */
+    .card {
+      cursor: none;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.16,1,0.3,1);
+    }
+
+    .card.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── CARD WRAP (holds the 3D edge) ── */
+    .card-wrap {
+      position: relative;
+      display: inline-block;
+    }
+
+    /* the solid black face that peeks out beneath */
+    .card-wrap::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: #111;
+      transform: translate(11px, 11px);
+      transition: transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      z-index: 0;
+    }
+
+    .card:hover .card-wrap::before {
+      transform: translate(16px, 16px);
+    }
+
+    /* ── CARD IMG ── */
+    .card-img {
+      width: 320px;
+      height: 320px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    /* shimmer sweep */
+    .card-img::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        108deg,
+        transparent 28%,
+        rgba(255,255,255,0.42) 50%,
+        transparent 72%
+      );
+      transform: translateX(-130%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .card:hover .card-img::after {
+      animation: shimmer 0.65s cubic-bezier(0.4,0,0.2,1) forwards;
+    }
+
+    @keyframes shimmer {
+      to { transform: translateX(130%); }
+    }
+
+    /* float */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-14px); }
+    }
+
+    .card.visible .card-img svg {
+      animation: float 5s ease-in-out 1s infinite;
+    }
+
+    .card:hover .card-img svg {
+      animation-play-state: paused;
+    }
+
+    /* stroke draw-on for outlined shirts */
+    .stroke-path {
+      stroke-dasharray: 600;
+      stroke-dashoffset: 600;
+      transition: stroke-dashoffset 0s;
+    }
+
+    .card.visible .stroke-path {
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 1.4s cubic-bezier(0.4,0,0.2,1) 0.3s;
+    }
+
+    /* ripple */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      width: 10px;
+      height: 10px;
+      pointer-events: none;
+      z-index: 3;
+      transform: translate(-50%, -50%) scale(0);
+      animation: ripple-out 0.8s ease-out forwards;
+    }
+
+    @keyframes ripple-out {
+      to { transform: translate(-50%, -50%) scale(70); opacity: 0; }
+    }
+
+    /* ── CARD LABEL ── */
+    .card-label {
+      padding: 16px 2px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    .card:hover .card-label {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .card-name {
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0.05em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .card-price { font-size: 12px; color: #aaa; }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 60px;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: #ddd;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-label" id="cursor-label">View</div>
+
+  <header>
+    <a class="logo" href="#" id="logo">SIGIL</a>
+    <a class="cart" href="#">Cart (0)</a>
+  </header>
+
+  <nav class="dot-nav" id="dot-nav"></nav>
+
+  <!-- Classic Tee — White -->
+  <div class="section" data-bg="#f0f0f0">
+    <div class="card">
+      <div class="card-wrap">
+      <div class="card-img" style="background:#eeeeee;">
+        <svg width="216" height="216" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path class="stroke-path" d="M38,6 C28,7 6,17 4,24 L4,36 C14,40 22,43 30,44 L23,94 L77,94 L70,44 C78,43 86,40 96,36 L96,24 C94,17 72,7 62,6 Q50,17 38,6 Z"
+            fill="#ffffff" stroke="#c0c0c0" stroke-width="1" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      </div>
+      <div class="card-label">
+        <span class="card-name">Classic Tee — White</span>
+        <span class="card-price">$38</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Classic Tee — Black -->
+  <div class="section" data-bg="#e8e8e8">
+    <div class="card">
+      <div class="card-wrap">
+      <div class="card-img" style="background:#e2e2e2;">
+        <svg width="216" height="216" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M38,6 C28,7 6,17 4,24 L4,36 C14,40 22,43 30,44 L23,94 L77,94 L70,44 C78,43 86,40 96,36 L96,24 C94,17 72,7 62,6 Q50,17 38,6 Z"
+            fill="#1a1a1a" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      </div>
+      <div class="card-label">
+        <span class="card-name">Classic Tee — Black</span>
+        <span class="card-price">$38</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Oversized Tee — Slate -->
+  <div class="section" data-bg="#e4eaee">
+    <div class="card">
+      <div class="card-wrap">
+      <div class="card-img" style="background:#dde5eb;">
+        <svg width="228" height="216" viewBox="0 0 110 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M40,6 C28,8 3,22 1,31 L1,46 C13,51 25,54 35,55 L28,94 L82,94 L75,55 C85,54 97,51 109,46 L109,31 C107,22 82,8 70,6 Q55,19 40,6 Z"
+            fill="#7a93a6" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      </div>
+      <div class="card-label">
+        <span class="card-name">Oversized Tee — Slate</span>
+        <span class="card-price">$44</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Oversized Tee — Sand -->
+  <div class="section" data-bg="#ede4d8">
+    <div class="card">
+      <div class="card-wrap">
+      <div class="card-img" style="background:#e5d9c8;">
+        <svg width="228" height="216" viewBox="0 0 110 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M40,6 C28,8 3,22 1,31 L1,46 C13,51 25,54 35,55 L28,94 L82,94 L75,55 C85,54 97,51 109,46 L109,31 C107,22 82,8 70,6 Q55,19 40,6 Z"
+            fill="#c4a07c" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      </div>
+      <div class="card-label">
+        <span class="card-name">Oversized Tee — Sand</span>
+        <span class="card-price">$44</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cropped Tee — White -->
+  <div class="section" data-bg="#f0f0f0">
+    <div class="card">
+      <div class="card-wrap">
+      <div class="card-img" style="background:#eeeeee;">
+        <svg width="216" height="190" viewBox="0 0 100 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path class="stroke-path" d="M38,6 C28,7 6,17 4,24 L4,36 C14,40 22,43 30,44 L24,80 L76,80 L70,44 C78,43 86,40 96,36 L96,24 C94,17 72,7 62,6 Q50,17 38,6 Z"
+            fill="#ffffff" stroke="#c0c0c0" stroke-width="1" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      </div>
+      <div class="card-label">
+        <span class="card-name">Cropped Tee — White</span>
+        <span class="card-price">$36</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Long Sleeve — Black -->
+  <div class="section" data-bg="#e6e6e6">
+    <div class="card">
+      <div class="card-wrap">
+      <div class="card-img" style="background:#e0e0e0;">
+        <svg width="216" height="216" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M38,8 C26,10 4,28 2,38 L2,58 C12,62 22,64 32,65 L25,94 L75,94 L68,65 C78,64 88,62 98,58 L98,38 C96,28 74,10 62,8 Q50,20 38,8 Z"
+            fill="#1a1a1a" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      </div>
+      <div class="card-label">
+        <span class="card-name">Long Sleeve — Black</span>
+        <span class="card-price">$48</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>© 2026 Sigil</footer>
+
+  <script>
+    /* ── LOGO LETTER ANIMATION ── */
+    const logoEl = document.getElementById('logo');
+    logoEl.innerHTML = [...'SIGIL'].map((ch, i) =>
+      `<span class="l" style="animation-delay:${0.08 * i + 0.1}s">${ch}</span>`
+    ).join('');
+
+    /* ── CUSTOM CURSOR ── */
+    const cursor   = document.getElementById('cursor');
+    const cursorLb = document.getElementById('cursor-label');
+    let mx = -100, my = -100;
+
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+      cursor.style.left   = mx + 'px';
+      cursor.style.top    = my + 'px';
+      cursorLb.style.left = mx + 'px';
+      cursorLb.style.top  = my + 'px';
+    });
+
+    /* ── DOT NAV ── */
+    const sections  = document.querySelectorAll('.section');
+    const dotNav    = document.getElementById('dot-nav');
+
+    sections.forEach((_, i) => {
+      const btn = document.createElement('button');
+      btn.setAttribute('aria-label', `Product ${i + 1}`);
+      btn.addEventListener('click', () => sections[i].scrollIntoView({ behavior: 'smooth' }));
+      dotNav.appendChild(btn);
+    });
+
+    const dots = dotNav.querySelectorAll('button');
+
+    /* ── INTERSECTION OBSERVERS ── */
+    const cards = document.querySelectorAll('.card');
+
+    // card entrance + dot activation + bg morph
+    const sectionObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const idx = [...sections].indexOf(entry.target);
+        // activate dot
+        dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+        // bg morph
+        document.body.style.background = entry.target.dataset.bg;
+      });
+    }, { threshold: 0.55 });
+
+    const cardObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.3 });
+
+    sections.forEach(s => sectionObserver.observe(s));
+    cards.forEach(c => cardObserver.observe(c));
+
+    /* ── TEXT SCRAMBLE ── */
+    const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    function scramble(el, original) {
+      let frame = 0;
+      const total = original.length * 4;
+      const tick = () => {
+        el.textContent = original.split('').map((ch, i) => {
+          if (ch === ' ' || ch === '—') return ch;
+          if (i < frame / 4) return original[i];
+          return CHARS[Math.floor(Math.random() * CHARS.length)];
+        }).join('');
+        frame++;
+        if (frame <= total) requestAnimationFrame(tick);
+        else el.textContent = original;
+      };
+      requestAnimationFrame(tick);
+    }
+
+    /* ── PER-CARD INTERACTIONS ── */
+    cards.forEach(card => {
+      const cardWrap = card.querySelector('.card-wrap');
+      const cardImg  = card.querySelector('.card-img');
+      const nameEl   = card.querySelector('.card-name');
+      const svg      = card.querySelector('svg');
+      const original = nameEl.textContent;
+
+      // cursor expand + scramble
+      card.addEventListener('mouseenter', () => {
+        cursor.classList.add('expand');
+        scramble(nameEl, original);
+      });
+      card.addEventListener('mouseleave', () => {
+        cursor.classList.remove('expand');
+        nameEl.textContent = original;
+        // smooth reset — tilt is on the wrap so the whole block resets together
+        cardWrap.style.transition = 'transform 0.65s cubic-bezier(0.25,0.46,0.45,0.94)';
+        cardWrap.style.transform  = '';
+      });
+
+      // 3D tilt on the whole wrap (face + black edge tilt as one solid block)
+      card.addEventListener('mousemove', e => {
+        const r  = cardWrap.getBoundingClientRect();
+        const x  = e.clientX - r.left;
+        const y  = e.clientY - r.top;
+        const cx = r.width  / 2;
+        const cy = r.height / 2;
+        const rx = ((y - cy) / cy) * -11;
+        const ry = ((x - cx) / cx) *  11;
+        cardWrap.style.transition = 'transform 0.08s linear';
+        cardWrap.style.transform  = `perspective(700px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+      });
+
+      // ripple on click
+      cardImg.addEventListener('click', e => {
+        const r      = cardImg.getBoundingClientRect();
+        const ripple = document.createElement('span');
+        ripple.className = 'ripple';
+        const fill = svg.querySelector('path').getAttribute('fill');
+        ripple.style.background = fill === '#ffffff' || fill === '#fff'
+          ? 'rgba(0,0,0,0.06)'
+          : 'rgba(255,255,255,0.18)';
+        ripple.style.left = `${e.clientX - r.left}px`;
+        ripple.style.top  = `${e.clientY - r.top}px`;
+        cardImg.appendChild(ripple);
+        ripple.addEventListener('animationend', () => ripple.remove());
+      });
+    });
+  </script>
+
+</body>
+</html>
